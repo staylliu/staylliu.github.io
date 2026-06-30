@@ -3,189 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>岳阳中考查分系统</title>
+    <title>A+查分 - 岳阳市初中学业水平考试成绩查询</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Microsoft YaHei', sans-serif;
-            background-color: #e6f2ff; /* 浅蓝色背景 */
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #f5f7fa; /* 柔和的浅灰白背景，不刺眼 */
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             padding: 20px;
         }
         .container {
             background: #ffffff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 82, 164, 0.15);
             width: 100%;
-            max-width: 450px;
-            border-top: 5px solid #0052a4; /* 顶部蓝色装饰条 */
+            max-width: 420px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            overflow: hidden;
+            position: relative;
         }
-        h1 {
+        /* 顶部红色头部 */
+        .header {
+            background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 100%);
+            padding: 30px 20px 25px;
             text-align: center;
-            color: #0052a4; /* 深蓝色标题 */
-            margin-bottom: 30px;
-            font-size: 24px;
-            letter-spacing: 2px;
+            position: relative;
         }
-        .form-group { margin-bottom: 20px; }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 15px solid #b71c1c;
+        }
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            color: #d32f2f;
+            font-size: 20px;
+            font-weight: 900;
+            width: 50px; height: 50px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            letter-spacing: -1px;
+        }
+        .header h1 {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .header p {
+            color: rgba(255,255,255,0.8);
+            font-size: 12px;
+            margin-top: 6px;
+        }
+        .form-area { padding: 30px 25px 20px; }
+        .form-group { margin-bottom: 18px; }
         label {
             display: block;
+            font-size: 13px;
+            color: #555;
             margin-bottom: 8px;
-            color: #333;
-            font-weight: bold;
-            font-size: 14px;
+            font-weight: 500;
         }
         input {
             width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #b3d4fc;
-            border-radius: 6px;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
             font-size: 16px;
             outline: none;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
+            background: #fafafa;
         }
-        input:focus { border-color: #0052a4; }
-        button {
+        input:focus {
+            border-color: #d32f2f;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(211,47,47,0.1);
+        }
+        .btn-query {
             width: 100%;
-            padding: 14px;
-            background-color: #0052a4;
+            padding: 16px;
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
             color: #fff;
             border: none;
-            border-radius: 6px;
-            font-size: 18px;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s;
-            margin-top: 10px;
+            letter-spacing: 4px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(211,47,47,0.4);
+            margin-top: 5px;
         }
-        button:hover { background-color: #003d7a; }
-        
-        /* 成绩展示区域 */
+        .btn-query:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(211,47,47,0.5); }
+        .btn-query:active { transform: translateY(0); }
+        .btn-query:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        .error-msg {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 6px;
+            display: none;
+            padding-left: 4px;
+        }
+        /* 加载动画 */
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 10;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #ffebee;
+            border-top-color: #d32f2f;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            margin-top: 16px;
+            color: #b71c1c;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        /* 成绩结果区 */
         .result-box {
             display: none;
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #f0f7ff;
-            border-radius: 8px;
-            border: 1px dashed #0052a4;
+            padding: 0 25px 25px;
+            position: relative;
         }
-        .result-item {
+        .result-watermark {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 60px;
+            font-weight: 900;
+            color: rgba(211,47,47,0.04);
+            white-space: nowrap;
+            pointer-events: none;
+            user-select: none;
+            letter-spacing: 10px;
+        }
+        .student-info {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px dotted #cce0ff;
+            align-items: center;
+            padding: 14px 16px;
+            background: #fff8f8;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ffebee;
+        }
+        .student-info span { font-size: 14px; color: #555; }
+        .student-info strong { color: #b71c1c; font-size: 15px; }
+        .score-table { width: 100%; border-collapse: collapse; }
+        .score-table tr { border-bottom: 1px solid #f5f5f5; }
+        .score-table tr:last-child { border-bottom: none; }
+        .score-table td {
+            padding: 13px 16px;
             font-size: 15px;
             color: #333;
         }
-        .result-item:last-child { border-bottom: none; }
-        .total-score {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px solid #0052a4;
-            font-size: 18px;
-            font-weight: bold;
-            color: #0052a4;
+        .score-table td:last-child {
+            text-align: right;
+            font-weight: 700;
+            color: #b71c1c;
+            font-size: 16px;
+        }
+        .total-row {
+            margin-top: 12px;
+            padding: 16px;
+            background: linear-gradient(135deg, #ffebee, #fce4ec);
+            border-radius: 10px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
-        .error-msg {
-            color: #d9363e;
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
+        .total-row .label { font-size: 15px; color: #b71c1c; font-weight: 600; }
+        .total-row .value { font-size: 28px; color: #d32f2f; font-weight: 900; }
+        /* 底部声明 */
+        .footer {
+            padding: 15px 25px 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #aaa;
+            line-height: 1.6;
+            border-top: 1px solid #f5f5f5;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>岳阳中考查分成绩</h1>
-    
-    <div class="form-group">
-        <label for="studentName">姓名</label>
-        <input type="text" id="studentName" placeholder="请输入姓名">
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">正在连接教育考试院服务器...</div>
     </div>
-    
-    <div class="form-group">
-        <label for="studentId">学籍号 <span style="font-weight:normal; color:#888;">(限19位，支持字母)</span></label>
-        <input type="text" id="studentId" maxlength="19" placeholder="请输入19位学籍号">
-        <div class="error-msg" id="idError">学籍号必须为19位字符（数字或字母）</div>
+
+    <div class="header">
+        <div class="logo">A+</div>
+        <h1>岳阳市初中学业水平考试成绩查询</h1>
+        <p>A+查分 · 官方授权查询通道</p>
     </div>
-    
-    <button onclick="queryScore()">查 询 成 绩</button>
+
+    <div class="form-area" id="formArea">
+        <div class="form-group">
+            <label>考生姓名</label>
+            <input type="text" id="studentName" placeholder="请输入考生姓名" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label>学籍号 <span style="color:#bbb; font-weight:400;">（19位，含字母）</span></label>
+            <input type="text" id="studentId" maxlength="19" placeholder="请输入19位学籍号" autocomplete="off">
+            <div class="error-msg" id="idError">⚠ 学籍号格式错误，请输入19位字母或数字</div>
+        </div>
+        <button class="btn-query" id="queryBtn" onclick="queryScore()">查 询 成 绩</button>
+    </div>
 
     <div class="result-box" id="resultBox">
-        <!-- 成绩将在这里动态生成 -->
+        <div class="result-watermark">A+查分</div>
+        <div class="student-info" id="studentInfoBar"></div>
+        <table class="score-table" id="scoreTable"></table>
+        <div class="total-row" id="totalRow"></div>
+    </div>
+
+    <div class="footer">
+        本查询结果仅供参考，最终成绩以岳阳市教育考试院公布为准<br>
+        © 2024 A+查分 版权所有 · 湘ICP备XXXXXXXX号
     </div>
 </div>
 
 <script>
+    // 限制学籍号只能输入字母和数字
+    document.getElementById('studentId').addEventListener('input', function() {
+        this.value = this.value.replace(/[^a-zA-Z0-9]/g, '');
+    });
+
     function queryScore() {
         const name = document.getElementById('studentName').value.trim();
         const id = document.getElementById('studentId').value.trim();
         const errorMsg = document.getElementById('idError');
+        const loading = document.getElementById('loadingOverlay');
+        const formArea = document.getElementById('formArea');
         const resultBox = document.getElementById('resultBox');
+        const queryBtn = document.getElementById('queryBtn');
 
-        // 1. 基础校验
-        if (!name) { alert('请输入姓名！'); return; }
-        
-        // 学籍号校验：必须是19位，且只能包含字母和数字
-        const idRegex = /^[a-zA-Z0-9]{19}$/;
-        if (!idRegex.test(id)) {
+        // 校验姓名
+        if (!name) { alert('请输入考生姓名'); return; }
+
+        // 校验学籍号：必须19位字母或数字
+        if (!/^[a-zA-Z0-9]{19}$/.test(id)) {
             errorMsg.style.display = 'block';
-            resultBox.style.display = 'none';
             return;
-        } else {
-            errorMsg.style.display = 'none';
         }
+        errorMsg.style.display = 'none';
 
-        // 2. 随机生成成绩
-        // 语文、数学满分120；其他满分100
+        // 显示加载动画
+        queryBtn.disabled = true;
+        loading.style.display = 'flex';
+        resultBox.style.display = 'none';
+
+        // 模拟网络请求延迟
+        setTimeout(() => {
+            loading.style.display = 'none';
+            formArea.style.display = 'none';
+            generateResult(name, id);
+            resultBox.style.display = 'block';
+            queryBtn.disabled = false;
+        }, 1500 + Math.random() * 1000);
+    }
+
+    function generateResult(name, id) {
         const subjects = [
             { name: '语文', max: 120 },
             { name: '数学', max: 120 },
             { name: '英语', max: 100 },
-            { name: '化学', max: 100 },
             { name: '物理', max: 100 },
-            { name: '历史', max: 100 },
-            { name: '政治', max: 100 }
+            { name: '化学', max: 100 },
+            { name: '道德与法治', max: 100 },
+            { name: '历史', max: 100 }
         ];
 
-        let totalScore = 0;
-        let htmlContent = '';
-
-        subjects.forEach(sub => {
-            // 生成随机分数，这里设定一个相对真实的区间，比如满分的60%~100%
-            const minScore = Math.floor(sub.max * 0.6);
-            const score = Math.floor(Math.random() * (sub.max - minScore + 1)) + minScore;
-            totalScore += score;
-            htmlContent += `
-                <div class="result-item">
-                    <span>${sub.name}</span>
-                    <span>${score}</span>
-                </div>
-            `;
-        });
-
-        htmlContent += `
-            <div class="total-score">
-                <span>总分 (满分750)</span>
-                <span>${totalScore}</span>
-            </div>
+        // 学生信息栏
+        document.getElementById('studentInfoBar').innerHTML = `
+            <span>姓名：<strong>${name}</strong></span>
+            <span>学籍号：<strong>${id}</strong></span>
         `;
 
-        // 3. 展示成绩
-        resultBox.innerHTML = htmlContent;
-        resultBox.style.display = 'block';
-    }
+        // 生成各科成绩
+        let total = 0;
+        let tableHTML = '';
+        subjects.forEach(sub => {
+            const min = Math.floor(sub.max * 0.55);
+            const score = Math.floor(Math.random() * (sub.max - min + 1)) + min;
+            total += score;
+            tableHTML += `<tr><td>${sub.name}</td><td>${score}</td></tr>`;
+        });
 
-    // 限制学籍号输入框只能输入字母和数字
-    document.getElementById('studentId').addEventListener('input', function(e) {
-        this.value = this.value.replace(/[^a-zA-Z0-9]/g, '');
-    });
+        document.getElementById('scoreTable').innerHTML = tableHTML;
+        document.getElementById('totalRow').innerHTML = `
+            <span class="label">总分（满分750）</span>
+            <span class="value">${total}</span>
+        `;
+    }
 </script>
 
 </body>
